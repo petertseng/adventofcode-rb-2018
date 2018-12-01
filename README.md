@@ -40,7 +40,7 @@ Favourite problems:
 
 Interesting approaches:
 
-* None yet
+* Day 01 (Frequency Deltas / Chronal Calibration): See https://www.reddit.com/r/adventofcode/comments/a20646/2018_day_1_solutions/eaukxu5/ . I have decided not to pursue this implementation here, but it boasts better performance for some adversarial inputs.
 
 # Takeaways
 
