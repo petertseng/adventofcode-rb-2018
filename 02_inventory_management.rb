@@ -1,3 +1,5 @@
+require 'set'
+
 VERBOSE = ARGV.delete('-v')
 
 input = ARGF.map(&:chomp).map(&:freeze).freeze
@@ -13,7 +15,16 @@ input.each { |i|
 
 puts "#{"#{two} * #{three} = " if VERBOSE}#{two * three}"
 
-input.combination(2) { |a, b|
-  match = a.each_char.zip(b.each_char).map { |aa, bb| aa if aa == bb }.compact
-  (puts match.join; break) if match.size == a.size - 1
+seen = Set.new
+
+# O(k^2 * n) (where k is length of the strings) time solution,
+# (assuming that either string slicing or string hashing is O(k) time)
+# Rather than the obvious O(k * n^2) time solution of comparing all pairs.
+# So pay attention to the relative size of k vs n before choosing this way.
+input.each { |s|
+  s.size.times { |i|
+    pair = [s[0...i], s[(i + 1)..-1]]
+    puts pair.join if seen.include?(pair)
+    seen << pair
+  }
 }
