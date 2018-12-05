@@ -1,12 +1,10 @@
 def react(str)
-  loop {
-    break str if (?a..?z).all? { |x|
-      [
-        str.gsub!(x + x.upcase, ''),
-        str.gsub!(x.upcase + x, ''),
-      ].none?
-    }
+  new_str = String.new(capacity: str.size)
+  str.each_char { |c|
+    new_str << c
+    new_str[-2, 2] = '' if new_str[-2]&.swapcase == c
   }
+  new_str
 end
 
 input = ARGF.read.chomp.freeze
