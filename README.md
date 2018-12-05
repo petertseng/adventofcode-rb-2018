@@ -45,6 +45,7 @@ Interesting approaches:
     * https://www.reddit.com/r/adventofcode/comments/a2damm/2018_day2_part_2_a_linear_time_solution/
     * https://www.reddit.com/r/adventofcode/comments/a2mavh/day_2_part_2_under_n2_time_show_off_your_solution/
     * https://www.reddit.com/r/adventofcode/comments/a2rt9s/2018_day_2_part_2_here_are_some_big_inputs_to/
+* Day 05 (Alchemical Reduction): Since characters can only react with their immediate neighbours, use a stack.
 
 # Takeaways
 

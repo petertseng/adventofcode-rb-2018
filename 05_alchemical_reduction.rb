@@ -1,11 +1,7 @@
 def react(str)
-  loop {
-    break str if (?a..?z).all? { |x|
-      [
-        str.gsub!(x + x.upcase, ''),
-        str.gsub!(x.upcase + x, ''),
-      ].none?
-    }
+  str.each_char.with_object(String.new(capacity: str.size)) { |c, new_str|
+    new_str << c
+    new_str[-2, 2] = '' if new_str[-2]&.swapcase == c
   }
 end
 
