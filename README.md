@@ -49,7 +49,7 @@ Interesting approaches:
 
 # Takeaways
 
-* None yet
+* Day 06 (Chronal Coordinates): Assumed I needed to be clever about which coordinates I check, wrote incorrect code that attempted to scan every row for the start/end column of the safe region on that row, but was actually an infinite loop. Changed to a flood-fill solution to get a spot on the leaderboard. Later discovered that using only the points in the bounding box would have been fine, given how far away the points are.
 
 # Posting schedule and policy
 
