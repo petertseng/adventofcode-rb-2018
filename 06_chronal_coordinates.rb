@@ -15,6 +15,7 @@ xmin, xmax = points.map(&:last).minmax
 
 owned = [0] * points.size
 infinite = [false] * points.size
+within = 0
 
 # Part 1
 # Calculate closest labeled point for all points within the bounding box.
@@ -28,6 +29,8 @@ infinite = [false] * points.size
 # and no amount of distance away from C will fix that.
 #
 # So no margin is needed.
+#
+# (Do part 2 while we're here too)
 MARGIN = 0
 yrange = (ymin - MARGIN)..(ymax + MARGIN)
 xrange = (xmin - MARGIN)..(xmax + MARGIN)
@@ -41,6 +44,7 @@ yrange.each { |y|
   xrange.each { |x|
     best_dist = 1.0 / 0.0
     best = nil
+    total_dist = 0
 
     # I'd use zip here, but it's demonstrably slower
     # (since it constructs additional arrays)
@@ -52,11 +56,17 @@ yrange.each { |y|
       elsif dist == best_dist
         best = nil
       end
+      total_dist += dist
     }
 
-    next unless best
-
     edge_x = x == xrange.begin || x == xrange.end
+
+    if total_dist < DIST
+      within += 1
+      puts "DANGER! SAFE ON EDGE #{y}, #{x}" if edge_y || edge_x
+    end
+
+    next unless best
 
     if edge_y || edge_x
       infinite[best] = true
@@ -68,24 +78,5 @@ yrange.each { |y|
 
 p owned.zip(infinite) if VERBOSE
 puts owned.zip(infinite).reject(&:last).map(&:first).max
-
-# Part 2
-# Flood-fill out from an average point.
-
-require 'set'
-
-within = 0
-queue = [points.transpose.map { |coord| coord.sum / coord.size }]
-seen = Set.new
-
-while (y, x = queue.pop)
-  next unless seen.add?([y, x])
-  next unless points.sum { |yy, xx| (yy - y).abs + (xx - x).abs } < DIST
-  within += 1
-  queue << [y - 1, x]
-  queue << [y + 1, x]
-  queue << [y, x - 1]
-  queue << [y, x + 1]
-end
 
 puts within
