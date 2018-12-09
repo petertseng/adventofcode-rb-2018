@@ -30,7 +30,7 @@ In general, all solutions can be invoked in both of the following ways:
 
 Some may additionally support other ways:
 
-* None yet
+* Day 9 (Marble Mania): Pass the number of players and the last marble in ARGV
 
 # Highlights
 
@@ -50,6 +50,7 @@ Interesting approaches:
 # Takeaways
 
 * Day 06 (Chronal Coordinates): Assumed I needed to be clever about which coordinates I check, wrote incorrect code that attempted to scan every row for the start/end column of the safe region on that row, but was actually an infinite loop. Changed to a flood-fill solution to get a spot on the leaderboard. Later discovered that using only the points in the bounding box would have been fine, given how far away the points are.
+* Day 09 (Marble Mania): Assumed there would be some pattern to be found within the sequence and wasted time trying to find it, rather than just brute-forcing it with a better data structure.
 
 # Posting schedule and policy
 
