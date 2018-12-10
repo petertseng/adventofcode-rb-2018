@@ -1,7 +1,8 @@
 CYCLE = 23
 
 def cycles_needed(n_marbles)
-  cycles_needed = n_marbles / CYCLE
+  raise "Argh! negative! #{n_marbles}" if n_marbles < 0
+  cycles_needed = n_marbles // CYCLE
   marbles_per_cycle = CYCLE - 2
 
   adding_cycles = (0..cycles_needed).bsearch { |n|
@@ -13,13 +14,13 @@ def cycles_needed(n_marbles)
     # I think it needs to include current, so I think 4 is right anyway.
     marbles_needed = cycles_left * (CYCLE - 7) + 4
     marbles_have >= marbles_needed
-  }
+  }.not_nil!
 
-  [adding_cycles, cycles_needed - adding_cycles]
+  {adding_cycles, cycles_needed - adding_cycles}
 end
 
-def play(players, n_marbles, verbose: false)
-  scores = [0] * players
+def play(players, n_marbles, verbose = false)
+  scores = [0_u64] * players
 
   adding_cycles, non_adding_cycles = cycles_needed(n_marbles)
   puts "#{adding_cycles} adding cycles, #{non_adding_cycles} non-adding cycles" if verbose
@@ -32,7 +33,7 @@ def play(players, n_marbles, verbose: false)
   # Therefore, the convention we'll use is:
   # right[i] indicates index of marble the right of marble numbered i.
   # Saves time now that we only need to do half as many pointer updates.
-  right = [nil] * (adding_cycles * CYCLE + 1)
+  right = [-1] * (adding_cycles * CYCLE + 1)
   right[0] = 0
 
   size = right.size
@@ -83,15 +84,15 @@ def play(players, n_marbles, verbose: false)
   scores.max
 end
 
-if ARGV.delete('-t')
+if ARGV.delete("-t")
   play(9, CYCLE * 4, verbose: true)
   all_good = {
-    [9, 25]    => 32,
-    [10, 1618] => 8317,
-    [13, 7999] => 146373,
-    [17, 1104] => 2764,
-    [21, 6111] => 54718,
-    [30, 5807] => 37305,
+    {9, 25}    => 32,
+    {10, 1618} => 8317,
+    {13, 7999} => 146373,
+    {17, 1104} => 2764,
+    {21, 6111} => 54718,
+    {30, 5807} => 37305,
   }.map { |args, want|
     got = play(*args)
     puts "#{args} should be #{want} not #{got}" if got != want
@@ -100,12 +101,12 @@ if ARGV.delete('-t')
   puts all_good
 end
 
-args = if ARGV.size >= 2 && ARGV.all? { |arg| arg.match?(/^\d+$/) }
+args = if ARGV.size >= 2 && ARGV.all? { |arg| arg.match(/^\d+$/) }
   ARGV
 else
-  ARGF.read.scan(/\d+/)
+  [0, 0]
 end
-players, marbles = args.map(&method(:Integer))
+players, marbles = args.map(&.to_i)
 
 puts play(players, marbles)
 puts play(players, marbles * 100)
