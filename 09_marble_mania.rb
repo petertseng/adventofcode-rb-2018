@@ -4,10 +4,15 @@ def play(players, n_marbles, verbose: false)
   scores = [0] * players
 
   # Avoid resizes by allocating all space once at the beginning.
-  left = [nil] * (n_marbles + 1)
+  # A linked list solution ostensibly needs value, left, right.
+  # However, left is only used when removing.
+  # We can identify the marble to removed in another way:
+  # The marble to the right of the 18th marble we add per cycle of 23.
+  # Therefore, the convention we'll use is:
+  # right[i] indicates index of marble the right of marble numbered i.
+  # Saves time now that we only need to do half as many pointer updates.
   right = [nil] * (n_marbles + 1)
 
-  left[0] = 0
   right[0] = 0
 
   size = right.size
@@ -21,21 +26,15 @@ def play(players, n_marbles, verbose: false)
       marble = base + 1 + i
       # Insert between current.right and current.right.right
       current_right = right[current]
-      current_right_right = right[current_right]
-      right[marble] = current_right_right
-      left[marble] = current_right
+      right[marble] = right[current_right]
       right[current_right] = marble
-      left[current_right_right] = marble
       current = marble
     }
 
     marble = base + CYCLE
-    7.times { current = left[current] }
-    scores[marble % players] += marble + current
-    current_right = right[current]
-    current_left = left[current]
-    left[current_right] = current_left
-    current = right[current_left] = current_right
+    removed = right[marble - 5]
+    scores[marble % players] += marble + removed
+    current = right[marble - 5] = right[removed]
 
     if verbose
       to_print = current
@@ -48,7 +47,6 @@ def play(players, n_marbles, verbose: false)
   }
 
   puts "accidentally allocated up to #{right.size} up from #{size}" if right.size != size
-  puts "accidentally allocated up to #{left.size} up from #{size}" if left.size != size
   scores.max
 end
 
