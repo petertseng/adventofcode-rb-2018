@@ -4,58 +4,51 @@ def play(players, n_marbles, verbose: false)
   scores = [0] * players
 
   # Avoid resizes by allocating all space once at the beginning.
-  # The key is to look at the example and the current marble at each line.
-  # There's a relationship between the elements to the left and right of current.
-  # This solution can easily be seen as analogous to Python solutions using deque#rotate,
-  # except using a fixed-size array as the underlying storage.
-  # See ephemient's solution in Haskell.
-  marbles = [nil] * n_marbles
-  marbles[0] = 0
+  left = [nil] * (n_marbles + 1)
+  right = [nil] * (n_marbles + 1)
+
+  left[0] = 0
+  right[0] = 0
+
+  size = right.size
 
   current = 0
-  size = 1
 
   (n_marbles / CYCLE).times { |cycle|
     base = CYCLE * cycle
 
     (CYCLE - 1).times { |i|
       marble = base + 1 + i
-      # Insertion: current and right-of-current become left-of-current.
-      # Note that in this array, subtraction goes to the right,
-      # so that we can just use a negative index instead of doing % n_marbles.
-      # This saves on a bit of runtime.
-      marbles[current - size] = marbles[current]
-      current = (current - 1) % n_marbles
-      marbles[current - size] = marbles[current]
-      marbles[current] = marble
-      size += 1
+      # Insert between current.right and current.right.right
+      current_right = right[current]
+      current_right_right = right[current_right]
+      right[marble] = current_right_right
+      left[marble] = current_right
+      right[current_right] = marble
+      left[current_right_right] = marble
+      current = marble
     }
 
     marble = base + CYCLE
-    # Deletion: Current plus five elements to the left (six in total)
-    # become right-of-current.
-    (1..6).each { |i|
-      # current + i >= marbles.size is *never* true because...?
-      # I'm not sure, no proof for this.
-      # Note that we will always have subtracted 1 from current 22 times,
-      # but what if we wrapped around in the last 6 times?
-      # For now I'll just print out a warning if I accidentally allocated.
-      # It hasn't happened in any test cases.
-      marbles[current + i] = marbles[current - size + i]
-    }
-    scores[marble % players] += marble + marbles[current - size + 7]
-    current += 6
-    size -= 1
+    7.times { current = left[current] }
+    scores[marble % players] += marble + current
+    current_right = right[current]
+    current_left = left[current]
+    left[current_right] = current_left
+    current = right[current_left] = current_right
 
     if verbose
-      to_the_right = marbles[[(current - size + 1), 0].max..current]
-      remain = size - to_the_right.size
-      wrapped = marbles[-remain, remain]
-      puts "#{to_the_right.reverse} / #{wrapped.reverse} @ #{current}"
+      to_print = current
+      print "#{current}, "
+      until (to_print = right[to_print]) == current
+        print "#{to_print}, "
+      end
+      puts
     end
   }
 
-  puts "accidentally allocated up to #{marbles.size} up from #{n_marbles}" if marbles.size != n_marbles
+  puts "accidentally allocated up to #{right.size} up from #{size}" if right.size != size
+  puts "accidentally allocated up to #{left.size} up from #{size}" if left.size != size
   scores.max
 end
 
