@@ -31,6 +31,7 @@ In general, all solutions can be invoked in both of the following ways:
 Some may additionally support other ways:
 
 * Day 9 (Marble Mania): Pass the number of players and the last marble in ARGV
+* Day 11 (Max Square / Chronal Charge): Pass the serial in ARGV
 
 # Highlights
 
@@ -48,11 +49,14 @@ Interesting approaches:
 * Day 05 (Alchemical Reduction): Since characters can only react with their immediate neighbours, use a stack.
 * Day 09 (Marble Mania):
     * The marble to be removed is the one to the right of the 18th marble in a cycle of 23. Thus, we only need a singly-linked list, not a doubly-linked list.
+* Day 11 (Max Square / Chronal Charge):
+    * https://en.wikipedia.org/wiki/Summed-area_table
 
 # Takeaways
 
 * Day 06 (Chronal Coordinates): Assumed I needed to be clever about which coordinates I check, wrote incorrect code that attempted to scan every row for the start/end column of the safe region on that row, but was actually an infinite loop. Changed to a flood-fill solution to get a spot on the leaderboard. Later discovered that using only the points in the bounding box would have been fine, given how far away the points are.
 * Day 09 (Marble Mania): Assumed there would be some pattern to be found within the sequence and wasted time trying to find it, rather than just brute-forcing it with a better data structure.
+* Day 11 (Max Square / Chronal Charge): Attempted to cache (only add new edges and corners) which still ends up taking 2 minutes to run because it's O(n^4), and was bug-prone and took a long time to write. For getting on the leaderboard, consider a completely different approach: Just use the O(n^5) approach, but with size as the outermost loop. Print out the largest square found for each size and submit when they start decreasing. In other words, try asymptotically-slow approaches that can nevertheless give an answer reasonably fast, rather than waiting for an asymptotically-fast approach to finish.
 
 # Posting schedule and policy
 
