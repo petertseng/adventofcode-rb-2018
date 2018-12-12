@@ -1,7 +1,28 @@
 CYCLE = 23
 
+def cycles_needed(n_marbles)
+  cycles_needed = n_marbles / CYCLE
+  marbles_per_cycle = CYCLE - 2
+
+  adding_cycles = (0..cycles_needed).bsearch { |n|
+    marbles_have = marbles_per_cycle * n
+    cycles_left = cycles_needed - n
+    # Marbles to be removed are at 19, 35, 51, etc... right of current.
+    # I'm adding 4 just because I haven't tested the limit thoroughly,
+    # so might be off-by-one.
+    # I think it needs to include current, so I think 4 is right anyway.
+    marbles_needed = cycles_left * (CYCLE - 7) + 4
+    marbles_have >= marbles_needed
+  }
+
+  [adding_cycles, cycles_needed - adding_cycles]
+end
+
 def play(players, n_marbles, verbose: false)
   scores = [0] * players
+
+  adding_cycles, non_adding_cycles = cycles_needed(n_marbles)
+  puts "#{adding_cycles} adding cycles, #{non_adding_cycles} non-adding cycles" if verbose
 
   # Avoid resizes by allocating all space once at the beginning.
   # A linked list solution ostensibly needs value, left, right.
@@ -11,15 +32,14 @@ def play(players, n_marbles, verbose: false)
   # Therefore, the convention we'll use is:
   # right[i] indicates index of marble the right of marble numbered i.
   # Saves time now that we only need to do half as many pointer updates.
-  right = [nil] * (n_marbles + 1)
-
+  right = [nil] * (adding_cycles * CYCLE + 1)
   right[0] = 0
 
   size = right.size
 
   current = 0
 
-  (n_marbles / CYCLE).times { |cycle|
+  adding_cycles.times { |cycle|
     base = CYCLE * cycle
 
     (CYCLE - 1).times { |i|
@@ -47,6 +67,19 @@ def play(players, n_marbles, verbose: false)
   }
 
   puts "accidentally allocated up to #{right.size} up from #{size}" if right.size != size
+
+  # First marble to remove is 19 in.
+  # The rest are at intervals of 16 thereafter.
+  removed = current
+  3.times { removed = right[removed] }
+
+  non_adding_cycles.times { |cycle|
+    16.times { removed = right[removed] }
+
+    marble = CYCLE * (cycle + adding_cycles + 1)
+    scores[marble % players] += marble + removed
+  }
+
   scores.max
 end
 

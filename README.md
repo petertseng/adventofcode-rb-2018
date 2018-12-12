@@ -49,6 +49,7 @@ Interesting approaches:
 * Day 05 (Alchemical Reduction): Since characters can only react with their immediate neighbours, use a stack.
 * Day 09 (Marble Mania):
     * The marble to be removed is the one to the right of the 18th marble in a cycle of 23. Thus, we only need a singly-linked list, not a doubly-linked list.
+    * Marbles to be removed are at indices 19, 35, 51, 67.... Once we have enough marbles in the list, we can stop adding new ones.
 * Day 11 (Max Square / Chronal Charge):
     * https://en.wikipedia.org/wiki/Summed-area_table
 
