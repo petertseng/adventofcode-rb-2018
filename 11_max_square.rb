@@ -36,12 +36,13 @@ puts (0..(SIZE - 3)).to_a.repeated_permutation(2).max_by { |x, y|
 }.map(&:succ).join(?,)
 
 def guess_max(maxes, sidelen)
-  return MAX_CELL if sidelen == 1
-
-  # Add in a cell of max value for the edges and corner.
-  edge = sidelen % 2 == 1 ? MAX_CELL * (sidelen * 2 + 1) : 0
-
-  maxes[sidelen / 2][0] * 4 + edge
+  if sidelen == 1
+    MAX_CELL
+  elsif sidelen % 2 == 0
+    maxes[sidelen / 2][0] * 4
+  else
+    (maxes[sidelen / 2 + 1][0] + maxes[sidelen / 2][0]) * 2 - MIN_CELL
+  end
 end
 
 maxes = {}
