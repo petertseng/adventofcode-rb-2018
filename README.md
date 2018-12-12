@@ -52,6 +52,8 @@ Interesting approaches:
     * Marbles to be removed are at indices 19, 35, 51, 67.... Once we have enough marbles in the list, we can stop adding new ones.
 * Day 11 (Max Square / Chronal Charge):
     * https://en.wikipedia.org/wiki/Summed-area_table
+    * We can calculate a maximum upper bound on the size of a square with length 2N by using four squares of length N.
+    * We can calculate a maximum upper bound on the size of a square with length 2N+1 by using two squares of length N plus two squares of length N+1 minus one square.
 
 # Takeaways
 
