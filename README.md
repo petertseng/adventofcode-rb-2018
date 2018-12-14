@@ -32,6 +32,7 @@ Some may additionally support other ways:
 
 * Day 9 (Marble Mania): Pass the number of players and the last marble in ARGV
 * Day 11 (Max Square / Chronal Charge): Pass the serial in ARGV
+* Day 14 (Chocolate Charts): Pass the input in ARGV
 
 # Highlights
 
@@ -60,6 +61,7 @@ Interesting approaches:
 * Day 06 (Chronal Coordinates): Assumed I needed to be clever about which coordinates I check, wrote incorrect code that attempted to scan every row for the start/end column of the safe region on that row, but was actually an infinite loop. Changed to a flood-fill solution to get a spot on the leaderboard. Later discovered that using only the points in the bounding box would have been fine, given how far away the points are.
 * Day 09 (Marble Mania): Assumed there would be some pattern to be found within the sequence and wasted time trying to find it, rather than just brute-forcing it with a better data structure.
 * Day 11 (Max Square / Chronal Charge): Attempted to cache (only add new edges and corners) which still ends up taking 2 minutes to run because it's O(n^4), and was bug-prone and took a long time to write. For getting on the leaderboard, consider a completely different approach: Just use the O(n^5) approach, but with size as the outermost loop. Print out the largest square found for each size and submit when they start decreasing. In other words, try asymptotically-slow approaches that can nevertheless give an answer reasonably fast, rather than waiting for an asymptotically-fast approach to finish.
+* Day 14 (Chocolate Charts): As I recall, I tried just taking a subarray of the last 6 scores at any time and comparing this against the desired sequence, but even this was too slow; I switched to only incrementing a counter when I had a match, which worked fast enough but was a bit error prone. I saw others just check every 1000 scores or so, only checking the last 1000+6 scores.
 
 # Posting schedule and policy
 
