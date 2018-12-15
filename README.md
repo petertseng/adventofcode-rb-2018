@@ -60,6 +60,9 @@ Interesting approaches:
     All sequences converge on index 23.
     From that point forward, we only need to store the scores that elves will land on.
     All other scores can be immediately discarded after updating the state of "how many charactes have I seen".
+* Day 15 (Beverage Bandits):
+    A single BFS seems like the way to go here.
+    It's easy to keep track of the layers of the BFS, so as soon as a layer finds a nonzero number of goals, we can stop.
 
 # Takeaways
 
