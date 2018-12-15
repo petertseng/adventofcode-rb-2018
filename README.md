@@ -55,6 +55,11 @@ Interesting approaches:
     * https://en.wikipedia.org/wiki/Summed-area_table
     * We can calculate a maximum upper bound on the size of a square with length 2N by using four squares of length N.
     * We can calculate a maximum upper bound on the size of a square with length 2N+1 by using two squares of length N plus two squares of length N+1 minus one square.
+* Day 14 (Chocolate Charts):
+    When wrapping around, you must land on one of the first ten elements of the array.
+    All sequences converge on index 23.
+    From that point forward, we only need to store the scores that elves will land on.
+    All other scores can be immediately discarded after updating the state of "how many charactes have I seen".
 
 # Takeaways
 
