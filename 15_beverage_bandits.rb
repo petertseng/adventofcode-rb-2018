@@ -27,13 +27,14 @@ progress = flags.include?(?p)
 
 class Unit
   attr_reader :team, :id, :hp
-  attr_accessor :pos
+  attr_accessor :pos, :no_move_epoch
 
   def initialize(team, id, pos)
     @team = team
     @id = id
     @pos = pos
     @hp = HP
+    @no_move_epoch = nil
   end
 
   def attacked(damage)
@@ -101,6 +102,12 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
   occupied = (goblins + elves).to_h { |uu| [uu.pos, uu] }
   turn_order = goblins + elves
 
+  # move_epoch increases when a unit moves or dies,
+  # since those are what affect the movement options.
+  # Each unit will store the move_epoch when it finds it cannot move,
+  # and use it to determine when it doesn't need to recheck.
+  move_epoch = 0
+
   1.step { |round|
     turn_order.select!(&:alive?)
     turn_order.sort_by!(&:pos)
@@ -118,6 +125,11 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
       # move
 
       if adj_enemy.empty?
+        # If nothing has changed since this unit last saw it can't move,
+        # don't bother retrying the BFS.
+        # Cuts runtime to about 0.9x original.
+        next if current_unit.no_move_epoch == move_epoch
+
         path = Search.bfs(
           current_unit.pos,
           neighbours: ->(pos) {
@@ -130,10 +142,13 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
 
         unless path
           puts "#{current_unit.to_s(width)} can't move." if DEBUG[:move]
+          current_unit.no_move_epoch = move_epoch
           # We don't have an enemy to attack
           # (otherwise we wouldn't have tried to move.)
           next
         end
+
+        move_epoch += 1
 
         # path[0] == unit's current location.
 
@@ -165,6 +180,8 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
         occupied.delete(target.pos)
         target_team = team_of[target.team]
         target_team.delete(target)
+
+        move_epoch += 1
 
         if target_team.empty?
           winners = team_of[current_unit.team]
