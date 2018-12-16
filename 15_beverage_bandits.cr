@@ -1,6 +1,6 @@
-require 'optparse'
+require "option_parser"
 
-require_relative 'lib/search'
+require "./lib/search"
 
 HP = 200
 ATTACK = 3
@@ -10,7 +10,7 @@ GOBLIN = 1
 TEAM_NAME = {
   ELF => :Elf,
   GOBLIN => :Goblin,
-}.sort_by(&:first).map(&:last).freeze
+}.to_a.sort_by(&.first).map(&.last)
 
 verbose = false
 one_only = false
@@ -18,22 +18,27 @@ two_only = false
 progress = false
 p2damage = nil
 
-DEBUG = {}
+DEBUG = {
+  :grid => false,
+  :move => false,
+  :attack => false,
+  :hp => false,
+}
 FMT = {
-  unit: '%s%d',
-  join: ' ',
+  :unit => "%s%d",
+  :join => " ",
 }
 
 # I'd try parse(into: h), but hard to translate into Crystal.
-OptionParser.new do |opts|
-  opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
+OptionParser.parse do |opts|
+  opts.banner = "Usage: #{PROGRAM_NAME} [options]"
 
   opts.on("-v", "--verbose") { verbose = true }
   opts.on("-1", "part 1 only") { one_only = true }
   opts.on("-2", "part 2 only") { two_only = true }
   opts.on("-p", "--progress", "progress and timing") { progress = true }
-  opts.on("-d DAMAGE", "--dmg DAMAGE", Integer, "specific damage for part 2") { |v|
-    p2damage = v
+  opts.on("-d DAMAGE", "--dmg DAMAGE", "specific damage for part 2") { |v|
+    p2damage = v.to_i
   }
 
   opts.on("-g", "--grid", "print grid") { DEBUG[:grid] = true }
@@ -48,14 +53,16 @@ OptionParser.new do |opts|
     puts opts
     exit
   }
-end.parse!
-
-DEBUG.freeze
-FMT.each_value(&:freeze).freeze
+end
 
 class Unit
-  attr_reader :team, :id, :hp
-  attr_accessor :pos, :no_move_epoch
+  getter :team, :id, :hp
+  property :pos, :no_move_epoch
+
+  @no_move_epoch: Int32?
+  @team: Int32
+  @id: Int32
+  @pos: Int32
 
   def initialize(team, id, pos)
     @team = team
@@ -79,12 +86,12 @@ class Unit
   end
 end
 
-def print_grid(goblins, elves, open, height, width, hp: false)
-  occupied = (goblins + elves).to_h { |uu| [uu.pos, uu] }
+def print_grid(goblins, elves, open, height, width, hp = false)
+  occupied = (goblins + elves).to_h { |uu| {uu.pos, uu} }
   team_abbrev = TEAM_NAME.map { |tn| tn.to_s[0] }
 
   (0...height).each { |y|
-    row_hp = []
+    row_hp = [] of String
     (0...width).each { |x|
       coord = y * width + x
       if (occupant = occupied[coord])
@@ -92,12 +99,12 @@ def print_grid(goblins, elves, open, height, width, hp: false)
         row_hp << FMT[:unit] % [abbrev, occupant.hp]
         print abbrev
       elsif open[coord]
-        print ?.
+        print '.'
       else
-        print ?#
+        print '#'
       end
     }
-    puts hp && !row_hp.empty? ? ' ' + row_hp.join(FMT[:join]) : ''
+    puts hp && !row_hp.empty? ? ' ' + row_hp.join(FMT[:join]) : ""
   }
 end
 
@@ -107,34 +114,34 @@ def next_to(coord, width)
     coord - 1,
     coord + 1,
     coord + width,
-  ].map(&:freeze).freeze
+  ]
 end
 
-def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die: nil)
-  if DEBUG[:grid]
+def battle(goblins, elves, open, width, attack = ([ATTACK] * 2), cant_die = nil)
     height = open.size / width
-    print_this_grid = ->(n) {
+    print_this_grid = ->(n: String) {
       puts n
-      print_grid(goblins, elves, open, height, width, hp: DEBUG[:hp])
+      print_grid(goblins, elves, open, height, width, hp = DEBUG[:hp])
     }
-    print_this_grid['Initial state']
+  if DEBUG[:grid]
+    print_this_grid.call("Initial state")
   end
-  uncoord = ->(p) { p.divmod(width) } if DEBUG[:move]
+  uncoord = ->(p: Int32) { p.divmod(width) }
 
   # Cache open neighbours of each open cell,
   # which saves a lot of work in BFS.
   # (4.2 seconds -> 2.6 seconds)
-  open_neighbours = open.map.with_index { |o, i|
-    next unless o
-    next_to(i, width).select { |n| open[n] }.freeze
-  }.freeze
+  open_neighbours = open.map_with_index { |o, i|
+    next [] of Int32 unless o
+    next_to(i, width).select { |n| open[n] }
+  }
 
   team_of = {
     GOBLIN => goblins,
     ELF => elves,
-  }.sort_by(&:first).map(&:last).freeze
+  }.to_a.sort_by(&.first).map(&.last)
 
-  occupied = (goblins + elves).to_h { |uu| [uu.pos, uu] }
+  occupied = (goblins + elves).to_h { |uu| {uu.pos, uu} }
   turn_order = goblins + elves
 
   # move_epoch increases when a unit moves or dies,
@@ -145,21 +152,21 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
 
   # Cache the set of squares next to each team.
   # (2.6 seconds -> 2.3 seconds)
-  next_to = [nil, nil]
+  next_to = [{} of Int32 => Bool, {} of Int32 => Bool]
   team_move_epoch = [0, 0]
   next_to_updated = [-1, -1]
 
   1.step { |round|
-    turn_order.select!(&:alive?)
-    turn_order.sort_by!(&:pos)
+    turn_order.select!(&.alive?)
+    turn_order.sort_by!(&.pos)
 
-    puts "#{?= * 40} round #{round} starting #{?= * 40}" if DEBUG.each_value.any?
+    puts "#{"-" * 40} round #{round} starting #{"-" * 40}" if DEBUG.each_value.any?
 
     turn_order.each { |current_unit|
       next unless current_unit.alive?
 
-      adj_enemy = next_to(current_unit.pos, width).filter_map { |nt|
-        next unless (enemy = occupied[nt])
+      adj_enemy = next_to(current_unit.pos, width).compact_map { |nt|
+        next unless (enemy = occupied[nt]?)
         enemy if enemy.team != current_unit.team
       }
 
@@ -176,14 +183,14 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
         if next_to_updated[enemy_team] < team_move_epoch[enemy_team]
           next_to[enemy_team] = team_of[enemy_team].flat_map { |u|
             open_neighbours[u.pos]
-          }.to_h { |e| [e, true] }.freeze
+          }.to_h { |e| {e, true} }
           next_to_updated[enemy_team] = team_move_epoch[enemy_team]
         end
 
         path = Search.bfs(
           current_unit.pos,
-          neighbours: ->(pos) { open_neighbours[pos].reject { |n| occupied[n] } },
-          goal: next_to[enemy_team],
+          neighbours = ->(pos: Int32) { open_neighbours[pos].reject { |n| occupied[n]? } },
+          goal = next_to[enemy_team],
         )
 
         unless path
@@ -200,7 +207,7 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
 
         # path[0] == unit's current location.
 
-        puts "#{current_unit.to_s(width)} will now move to #{uncoord[path[1]]} (want to go to #{uncoord[path[-1]]})" if DEBUG[:move]
+        puts "#{current_unit.to_s(width)} will now move to #{uncoord.call(path[1])} (want to go to #{uncoord.call(path[-1])})" if DEBUG[:move]
 
         occupied.delete(current_unit.pos)
         new_pos = path[1]
@@ -211,8 +218,8 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
         # So, we'll only be there if path[1] == path[-1] (path.size == 2)
         next if path.size != 2
 
-        adj_enemy = next_to(new_pos, width).filter_map { |nt|
-          next unless (enemy = occupied[nt])
+        adj_enemy = next_to(new_pos, width).compact_map { |nt|
+          next unless (enemy = occupied[nt]?)
           enemy if enemy.team != current_unit.team
         }
       end
@@ -224,7 +231,7 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
       attack_str = "#{current_unit.to_s(width)} attacks #{target.to_s(width)}" if DEBUG[:attack]
       if target.attacked(attack[current_unit.team]) == :dead
         puts "#{attack_str}, now dead" if DEBUG[:attack]
-        return [:unknown, nil, nil] if cant_die && target.team == cant_die
+        return {-1, {0, 0}} if cant_die && target.team == cant_die
         occupied.delete(target.pos)
         target_team = team_of[target.team]
         target_team.delete(target)
@@ -240,8 +247,8 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
           # Need to consult the original turn order for this round.
           # Scans most of the array, but it's fine since this happens once per battle.
           full_rounds = round - 1
-          index_of_attacker = turn_order.index(current_unit)
-          teammate_after_attacker = turn_order.drop(index_of_attacker + 1).find { |u|
+          index_of_attacker = turn_order.index(current_unit).not_nil!
+          teammate_after_attacker = turn_order.skip(index_of_attacker + 1).find { |u|
             u.alive? && u.team == current_unit.team
           }
           if teammate_after_attacker
@@ -251,9 +258,9 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
             full_rounds += 1
           end
 
-          print_this_grid["Game over, round #{round} (#{last_round_commentary}: #{full_rounds} full rounds)"] if DEBUG[:grid]
+          print_this_grid.call("Game over, round #{round} (#{last_round_commentary}: #{full_rounds} full rounds)") if DEBUG[:grid]
 
-          return [current_unit.team, full_rounds, winners.sum(&:hp)]
+          return {current_unit.team, {full_rounds, winners.sum(&.hp)}}
         end
       elsif DEBUG[:attack]
         puts "#{attack_str}, now #{target.hp} HP"
@@ -261,20 +268,22 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
     }
 
     if DEBUG[:hp] && !DEBUG[:grid]
-      puts "GOBLIN: #{goblins.map(&:hp)}"
-      puts "ELF   : #{elves.map(&:hp)}"
+      puts "GOBLIN: #{goblins.map(&.hp)}"
+      puts "ELF   : #{elves.map(&.hp)}"
     end
 
-    print_this_grid["After round #{round}"] if DEBUG[:grid]
+    print_this_grid.call("After round #{round}") if DEBUG[:grid]
   }
+
+  raise "We never get here"
 end
 
-input = ARGF.each_line.map(&:chomp)
-width = input.map(&:size).max
+input = ARGF.each_line.map(&.chomp).to_a
+width = input.map(&.size).max
 
-goblins = []
-elves = []
-open = []
+goblins = [] of Unit
+elves = [] of Unit
+open = [false] * (width * input.size)
 
 input.each_with_index { |row, y|
   row.each_char.with_index { |cell, x|
@@ -282,15 +291,15 @@ input.each_with_index { |row, y|
     # Using ints takes 3.2 seconds while using arrays takes 15 seconds.
     coord = y * width + x
     case cell
-    when ?G
+    when 'G'
       goblins << Unit.new(GOBLIN, goblins.size, coord)
       open[coord] = true
-    when ?E
+    when 'E'
       elves << Unit.new(ELF, elves.size, coord)
       open[coord] = true
-    when ?.
+    when '.'
       open[coord] = true
-    when ?#
+    when '#'
       open[coord] = false
     else
       raise "unknown cell #{cell} at #{y} #{x}"
@@ -298,25 +307,22 @@ input.each_with_index { |row, y|
   }
 }
 
-open.freeze
-goblins.each(&:freeze).freeze
-elves.each(&:freeze).freeze
+require "time"
 
-require 'time'
-
-t = Time.now
+t = Time.utc
 
 unless two_only
-  _, *outcome = battle(goblins.map(&:dup), elves.map(&:dup), open, width)
+  _, outcome = battle(goblins.map(&.dup), elves.map(&.dup), open, width)
 
   p outcome if verbose
-  puts outcome.reduce(:*)
-  puts "#{Time.now - t} part 1" if progress
+  a, b = outcome
+  puts a * b
+  puts "#{Time.utc - t} part 1" if progress
 end
 
 prev_attacks_to_win = HP
 
-damage_range = p2damage ? p2damage..p2damage : (ATTACK + 1)..(HP + 1)
+damage_range = p2damage ? p2damage.not_nil!..p2damage.not_nil! : (ATTACK + 1)..(HP + 1)
 
 # Note that for my input, a binary search will not work!
 # Elves win with no deaths at 19,
@@ -324,12 +330,12 @@ damage_range = p2damage ? p2damage..p2damage : (ATTACK + 1)..(HP + 1)
 # Don't want to deal w/ that, just linear search.
 # It's not too bad anyway since we stop on first Elf death.
 damage_range.each { |n|
-  raise 'The elves can never win' if n > HP
+  raise "The elves can never win" if n > HP
 
   attack = {
     GOBLIN => ATTACK,
     ELF => n,
-  }.sort_by(&:first).map(&:last).freeze
+  }.to_a.sort_by(&.first).map(&.last)
 
   # ceil(HP / attack) = turns to win
   # if it's the same as previous, don't recheck.
@@ -339,16 +345,17 @@ damage_range.each { |n|
   next if attacks_to_win == prev_attacks_to_win
   prev_attacks_to_win = attacks_to_win
 
-  puts "#{Time.now - t} part 2 attack #{n}" if progress
-  winner, *outcome = battle(
-    goblins.map(&:dup), elves.map(&:dup), open, width,
-    attack: attack, cant_die: ELF,
+  puts "#{Time.utc - t} part 2 attack #{n}" if progress
+  winner, outcome = battle(
+    goblins.map(&.dup), elves.map(&.dup), open, width,
+    attack, cant_die = ELF,
   )
 
   if winner == ELF
-    p [n] + outcome if verbose
-    puts outcome.reduce(:*)
-    puts "#{Time.now - t} part 2" if progress
+    a, b = outcome
+    p({n, a, b}) if verbose
+    puts a * b
+    puts "#{Time.utc - t} part 2" if progress
     break
   end
 } unless one_only
