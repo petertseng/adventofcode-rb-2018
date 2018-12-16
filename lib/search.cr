@@ -1,7 +1,5 @@
 module Search
-  module_function
-
-  def path_of(prevs, n)
+  def self.path_of(prevs, n)
     path = [n]
     current = n
     while (current = prevs[current])
@@ -10,17 +8,17 @@ module Search
     path
   end
 
-  def bfs(start, neighbours:, goal:)
+  def self.bfs(start, neighbours = nil, goal = nil)
     current_gen = [start]
-    prev = {start => nil}
-    goals = []
+    prev = {start => nil} of Int32 => Int32?
+    goals = [] of Int32
 
     until current_gen.empty?
-      next_gen = []
-      while (cand = current_gen.shift)
-        goals << cand if goal[cand]
+      next_gen = [] of Int32
+      while (cand = current_gen.shift?)
+        goals << cand if goal.has_key?(cand)
 
-        neighbours[cand].each { |neigh|
+        neighbours.call(cand).each { |neigh|
           next if prev.has_key?(neigh)
           prev[neigh] = cand
           next_gen << neigh
