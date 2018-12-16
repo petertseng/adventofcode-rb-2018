@@ -4,31 +4,31 @@ pos_and_vels = ARGF.map { |l|
   l.scan(/-?\d+/).map(&:to_i).freeze
 }.freeze
 
-prev_points = nil
-prev_yrange = 1.0 / 0.0
+def yrange_at_time(pos_and_vels, t)
+  ymin, ymax = pos_and_vels.map { |_, y, _, vy| y + vy * t }.minmax
+  ymax - ymin
+end
 
-puts 0.step { |t|
-  points = pos_and_vels.map { |x, y, vx, vy| [x + vx * t, y + vy * t] }
-
-  ymin, ymax = points.map(&:last).minmax
-  yrange = ymax - ymin
-
-  if yrange > prev_yrange
-    ymin, ymax = prev_points.map(&:last).minmax
-    xmin, xmax = prev_points.map(&:first).minmax
-    prev_points = Set.new(prev_points)
-
-    (ymin..ymax).each { |y|
-      (xmin..xmax).each { |x|
-        print prev_points.include?([x, y]) ? ?# : ' '
-      }
-      puts
-    }
-
-    puts
-    break t - 1
-  end
-
-  prev_points = points
-  prev_yrange = ymax - ymin
+# Binary search for the time when yrange is at its lowest.
+# Note that this isn't guaranteed to be the solution in general:
+# * the points might collapse into one location
+# * some points might not be involved in the message
+# but for the class of inputs encountered in Advent of Code, it's good.
+best_time = (0..yrange_at_time(pos_and_vels, 0)).bsearch { |t|
+  yrange_at_time(pos_and_vels, t + 1) > yrange_at_time(pos_and_vels, t)
 }
+
+points = pos_and_vels.map { |x, y, vx, vy| [x + vx * best_time, y + vy * best_time] }
+ymin, ymax = points.map(&:last).minmax
+xmin, xmax = points.map(&:first).minmax
+points = Set.new(points)
+
+(ymin..ymax).each { |y|
+  (xmin..xmax).each { |x|
+    print points.include?([x, y]) ? ?# : ' '
+  }
+  puts
+}
+puts
+
+puts best_time
