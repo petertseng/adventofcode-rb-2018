@@ -63,6 +63,7 @@ Interesting approaches:
 * Day 15 (Beverage Bandits):
     A single BFS seems like the way to go here.
     It's easy to keep track of the layers of the BFS, so as soon as a layer finds a nonzero number of goals, we can stop.
+    In addition, implement the "and so none of the units can move until a unit dies" optimisation noted in the problem text.
 
 # Takeaways
 
