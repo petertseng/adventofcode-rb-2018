@@ -1,3 +1,5 @@
+require 'optparse'
+
 require_relative 'lib/search'
 
 HP = 200
@@ -10,20 +12,34 @@ TEAM_NAME = {
   GOBLIN => :Goblin,
 }.sort_by(&:first).map(&:last).freeze
 
-flags = ARGV.select { |a| a.start_with?(?-) }.map { |a| a[1..-1] }.join
-# I'd normally use partition, but ARGF expects the filenames in ARGV.
-ARGV.select! { |a| a == ?- || !a.start_with?(?-) }
+verbose = false
+one_only = false
+two_only = false
+progress = false
 
-verbose = flags.include?(?v)
-one_only = flags.include?(?1)
-two_only = flags.include?(?2)
-DEBUG = {
-  hp: flags.include?('dh'),
-  grid: flags.include?('dg'),
-  move: flags.include?('dm'),
-  attack: flags.include?('da'),
-}
-progress = flags.include?(?p)
+DEBUG = {}
+
+# I'd try parse(into: h), but hard to translate into Crystal.
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
+
+  opts.on("-v", "--verbose") { verbose = true }
+  opts.on("-1", "part 1 only") { one_only = true }
+  opts.on("-2", "part 2 only") { two_only = true }
+  opts.on("-p", "--progress", "progress and timing") { progress = true }
+
+  opts.on("-g", "--grid", "print grid") { DEBUG[:grid] = true }
+  opts.on("-m", "--move", "print moves") { DEBUG[:move] = true }
+  opts.on("-a", "--attack", "print attacks") { DEBUG[:attack] = true }
+  opts.on("-u", "--hp", "print HP") { DEBUG[:hp] = true }
+
+  opts.on("-h", "--help") {
+    puts opts
+    exit
+  }
+end.parse!
+
+DEBUG.freeze
 
 class Unit
   attr_reader :team, :id, :hp
