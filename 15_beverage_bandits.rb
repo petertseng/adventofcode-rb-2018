@@ -16,6 +16,7 @@ verbose = false
 one_only = false
 two_only = false
 progress = false
+p2damage = nil
 
 DEBUG = {}
 
@@ -27,6 +28,9 @@ OptionParser.new do |opts|
   opts.on("-1", "part 1 only") { one_only = true }
   opts.on("-2", "part 2 only") { two_only = true }
   opts.on("-p", "--progress", "progress and timing") { progress = true }
+  opts.on("-d DAMAGE", "--dmg DAMAGE", Integer, "specific damage for part 2") { |v|
+    p2damage = v
+  }
 
   opts.on("-g", "--grid", "print grid") { DEBUG[:grid] = true }
   opts.on("-m", "--move", "print moves") { DEBUG[:move] = true }
@@ -282,12 +286,14 @@ end
 
 prev_attacks_to_win = HP
 
+damage_range = p2damage ? p2damage..p2damage : (ATTACK + 1)..(HP + 1)
+
 # Note that for my input, a binary search will not work!
 # Elves win with no deaths at 19,
 # but win with deaths at 20-24.
 # Don't want to deal w/ that, just linear search.
 # It's not too bad anyway since we stop on first Elf death.
-((ATTACK + 1)..(HP + 1)).each { |n|
+damage_range.each { |n|
   raise 'The elves can never win' if n > HP
 
   attack = {
