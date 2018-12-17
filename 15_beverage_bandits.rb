@@ -19,6 +19,10 @@ progress = false
 p2damage = nil
 
 DEBUG = {}
+FMT = {
+  unit: '%s%d',
+  join: ' ',
+}
 
 # I'd try parse(into: h), but hard to translate into Crystal.
 OptionParser.new do |opts|
@@ -37,6 +41,9 @@ OptionParser.new do |opts|
   opts.on("-a", "--attack", "print attacks") { DEBUG[:attack] = true }
   opts.on("-u", "--hp", "print HP") { DEBUG[:hp] = true }
 
+  opts.on("-f", "--unit-fmt FMT", "format string for units") { |v| FMT[:unit] = v }
+  opts.on("-j", "--unit-join S", "joiner for units") { |v| FMT[:join] = v }
+
   opts.on("-h", "--help") {
     puts opts
     exit
@@ -44,6 +51,7 @@ OptionParser.new do |opts|
 end.parse!
 
 DEBUG.freeze
+FMT.each_value(&:freeze).freeze
 
 class Unit
   attr_reader :team, :id, :hp
@@ -81,7 +89,7 @@ def print_grid(goblins, elves, open, height, width, hp: false)
       coord = y * width + x
       if (occupant = occupied[coord])
         abbrev = team_abbrev[occupant.team]
-        row_hp << "#{abbrev}#{occupant.hp}"
+        row_hp << FMT[:unit] % [abbrev, occupant.hp]
         print abbrev
       elsif open[coord]
         print ?.
@@ -89,7 +97,7 @@ def print_grid(goblins, elves, open, height, width, hp: false)
         print ?#
       end
     }
-    puts hp ? ' ' + row_hp.join(', ') : ''
+    puts hp && !row_hp.empty? ? ' ' + row_hp.join(FMT[:join]) : ''
   }
 end
 
