@@ -38,7 +38,7 @@ Some may additionally support other ways:
 
 Favourite problems:
 
-* None yet
+* Day 17 (Reservoir Research): Novel concept, reasonably challenging, fun to visualise.
 
 Interesting approaches:
 
