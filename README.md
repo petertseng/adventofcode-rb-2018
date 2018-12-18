@@ -64,6 +64,9 @@ Interesting approaches:
     A single BFS seems like the way to go here.
     It's easy to keep track of the layers of the BFS, so as soon as a layer finds a nonzero number of goals, we can stop.
     In addition, implement the "and so none of the units can move until a unit dies" optimisation noted in the problem text.
+* Day 18 (Tri-State Automata / Settlers of The North Pole):
+    Bit-shifting implementation, like http://dotat.at/prog/life/life.html, but with an 18-bit index instead of 9-bit.
+    Unfortunately, the "compact representation" did not prove to be faster here.
 
 # Takeaways
 
