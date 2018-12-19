@@ -75,6 +75,7 @@ Interesting approaches:
 * Day 11 (Max Square / Chronal Charge): Attempted to cache (only add new edges and corners) which still ends up taking 2 minutes to run because it's O(n^4), and was bug-prone and took a long time to write. For getting on the leaderboard, consider a completely different approach: Just use the O(n^5) approach, but with size as the outermost loop. Print out the largest square found for each size and submit when they start decreasing. In other words, try asymptotically-slow approaches that can nevertheless give an answer reasonably fast, rather than waiting for an asymptotically-fast approach to finish.
 * Day 14 (Chocolate Charts): As I recall, I tried just taking a subarray of the last 6 scores at any time and comparing this against the desired sequence, but even this was too slow; I switched to only incrementing a counter when I had a match, which worked fast enough but was a bit error prone. I saw others just check every 1000 scores or so, only checking the last 1000+6 scores.
 * Day 16 (Chronal Classification): A small reading mistake here; I checked for `== 3` instead of `>= 3`.
+* Day 19 (Go With the Flow): This one was interesting since my part 1 input was a prime number, so I assumed it was 1 + that number, which got a wrong answer. Then I decided to dump all registers every time when r3 (my register holding a number that might be added to r0), and noticed that my r0 increased from 1 to 12... then the light bulb turned on, because I saw that my part 2 number was divisible by 11.
 
 # Posting schedule and policy
 
