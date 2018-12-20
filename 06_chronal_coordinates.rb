@@ -25,7 +25,6 @@ xmin, xmax = points.map(&:last).minmax
 
 owned = [0] * points.size
 infinite = [false] * points.size
-within = 0
 
 # Part 1
 # Calculate closest labeled point for all points within the bounding box.
@@ -39,8 +38,6 @@ within = 0
 # and no amount of distance away from C will fix that.
 #
 # So no margin is needed.
-#
-# (Do part 2 while we're here too)
 MARGIN = 0
 yrange = (ymin - MARGIN)..(ymax + MARGIN)
 xrange = (xmin - MARGIN)..(xmax + MARGIN)
@@ -71,11 +68,6 @@ yrange.each { |y|
 
     edge_x = x == xrange.begin || x == xrange.end
 
-    if total_dist < DIST
-      within += 1
-      puts "DANGER! SAFE ON EDGE #{y}, #{x}" if edge_y || edge_x
-    end
-
     next unless best
 
     if edge_y || edge_x
@@ -88,5 +80,25 @@ yrange.each { |y|
 
 p owned.zip(infinite) if VERBOSE
 puts owned.zip(infinite).reject(&:last).map(&:first).max
+
+within = 0
+
+y_dists = yrange.to_h { |y| [y, points.sum { |yy, _| (yy - y).abs }] }.freeze
+x_dists = xrange.to_h { |x| [x, points.sum { |_, xx| (xx - x).abs }] }.freeze
+
+yrange.each { |y|
+  edge_y = y == yrange.begin || y == yrange.end
+  ydist = y_dists[y]
+
+  xrange.each { |x|
+    edge_x = x == xrange.begin || x == xrange.end
+    total_dist = ydist + x_dists[x]
+
+    if total_dist < DIST
+      within += 1
+      puts "DANGER! SAFE ON EDGE #{y}, #{x}" if edge_y || edge_x
+    end
+  }
+}
 
 puts within
