@@ -12,64 +12,77 @@ points = ARGF.map { |l|
 
 ymin, ymax = points.map(&:first).minmax
 xmin, xmax = points.map(&:last).minmax
-
-owned = [0] * points.size
-infinite = [false] * points.size
+height = ymax - ymin + 1
+width = xmax - xmin + 1
 
 # Part 1
-# Calculate closest labeled point for all points within the bounding box.
-# Anything that keeps growing beyond the box we'll call "infinite"
-#
-# I thought we might need a margin to deal w/ cases like this:
-# A     B
-#    C
-#    D
-# However, in such a case, C is actually infinite (extends upwards),
-# and no amount of distance away from C will fix that.
-#
-# So no margin is needed.
-MARGIN = 0
-yrange = (ymin - MARGIN)..(ymax + MARGIN)
-xrange = (xmin - MARGIN)..(xmax + MARGIN)
-yrange.each { |y|
-  edge_y = y == yrange.begin || y == yrange.end
-  # Since y distance depends only on y,
-  # it saves some time to precalculate it.
-  # Cuts runtime to about 0.9x.
-  y_dists = points.map { |yy, _| (yy - y).abs }
+# Simultaneous flood-fill out from all labeled points.
 
-  xrange.each { |x|
-    best_dist = 1.0 / 0.0
-    best = nil
-    total_dist = 0
+# Compress all points into a single integer,
+# rather than creating two-element [y, x] arrays.
+# Creating tons of arrays takes unreasonably long.
+flat_points = points.map { |(y, x)| (y - ymin) * width + (x - xmin) }.freeze
 
-    # I'd use zip here, but it's demonstrably slower
-    # (since it constructs additional arrays)
-    points.each_with_index { |(_, xx), i|
-      dist = y_dists[i] + (xx - x).abs
-      if dist < best_dist
-        best = i
-        best_dist = dist
-      elsif dist == best_dist
-        best = nil
-      end
-      total_dist += dist
-    }
+owned = [1] * points.size
+infinite = [false] * points.size
 
-    edge_x = x == xrange.begin || x == xrange.end
+queues = flat_points.map { |p| [p] }
 
-    next unless best
-
-    if edge_y || edge_x
-      infinite[best] = true
-    else
-      owned[best] += 1
-    end
-  }
+seen_dist = [nil] * (height * width)
+claim = [nil] * (height * width)
+flat_points.each_with_index { |p, i|
+  claim[p] = i
+  seen_dist[p] = 0
 }
+
+dist = 0
+
+until queues.all?(&:empty?)
+  dist += 1
+
+  queues = queues.map.with_index { |q, i|
+    q.flat_map { |p|
+      nq = []
+      # Note that any point on the bounding box causes its owner to be infinite,
+      # since a step away from the bounding box increases all distances.
+      # Unfortunately, we do need to unflatten here,
+      # because we need to check individual coordinates.
+      y, x = p.divmod(width)
+      if y == 0;          infinite[i] = true else nq << p - width end
+      if y == height - 1; infinite[i] = true else nq << p + width end
+      if x == 0;          infinite[i] = true else nq << p - 1 end
+      if x == width - 1;  infinite[i] = true else nq << p + 1 end
+      # Exclude points that have been claimed in an earlier iteration.
+      # (Could do this check above, but code would be repeated 4x)
+      nq.reject! { |pp| seen_dist[pp] &.< dist }
+      nq
+    }.uniq.each { |p|
+      # Either claim an unclaimed point or clash with a claimant.
+      claim[p] = claim[p] ? :clash : i
+    }
+  }
+
+  queues.each_with_index { |nq, i|
+    nq.reject! { |p|
+      if claim[p] == i
+        # Only claimant this round - claim is confirmed.
+        owned[i] += 1
+        seen_dist[p] = dist
+      end
+      # Remove points where we clashed,
+      # since neither claimant will make progress.
+      claim[p] == :clash
+    }
+  }
+end
 
 p owned.zip(infinite) if VERBOSE
 puts owned.zip(infinite).reject(&:last).map(&:first).max
+
+# Margin may be needed if points are too close together.
+MARGIN = 0
+yrange = (ymin - MARGIN)..(ymax + MARGIN)
+xrange = (xmin - MARGIN)..(xmax + MARGIN)
 
 within = 0
 
