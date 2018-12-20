@@ -48,6 +48,8 @@ Interesting approaches:
     * https://www.reddit.com/r/adventofcode/comments/a2mavh/day_2_part_2_under_n2_time_show_off_your_solution/
     * https://www.reddit.com/r/adventofcode/comments/a2rt9s/2018_day_2_part_2_here_are_some_big_inputs_to/
 * Day 05 (Alchemical Reduction): Since characters can only react with their immediate neighbours, use a stack.
+* Day 06 (Chronal Coordinates):
+    * Part 2: X distances and Y distances are independent of one another.
 * Day 09 (Marble Mania):
     * The marble to be removed is the one to the right of the 18th marble in a cycle of 23. Thus, we only need a singly-linked list, not a doubly-linked list.
     * Marbles to be removed are at indices 19, 35, 51, 67.... Once we have enough marbles in the list, we can stop adding new ones.
