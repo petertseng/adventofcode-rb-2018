@@ -1,54 +1,123 @@
 class PriorityQueue
-  def initialize
-    @elts = []
-    @prio = {}
-    @idx = {}
-  end
+  # http://www.cs.cmu.edu/afs/cs.cmu.edu/user/sleator/www/papers/pairing-heaps.pdf
+  class PairingTree
+    attr_reader :data
+    attr_accessor :priority, :left_child, :prev, :next
 
-  def []=(e, prio)
-    @prio[e] = prio
-    i = @idx[e] || @elts.size
-    until i == 0 || @prio[(parent_v = @elts[parent_i = (i - 1) / 2])] < prio
-      @elts[i] = parent_v
-      @idx[parent_v] = i
-      i = parent_i
+    def initialize(data, priority)
+      @data = data
+      @priority = priority
+      @left_child = nil
+      # parent if left child, otherwise left sibling
+      @prev = nil
+      @next = nil
     end
-    @elts[i] = e
-    @idx[e] = i
+
+    def to_s
+      "#{@data} @ #{@priority}"
+    end
   end
 
-  def pop
-    return nil if @elts.empty?
-    last = @elts.pop
-    (@elts[0] || last).tap { |e|
-      @idx.delete(e)
-      @prio.delete(e)
-      down(0, last) unless @elts.empty?
-    }
+  def initialize
+    @root = nil
+    @existing = {}
+  end
+
+  def []=(data, priority)
+    if (existing = @existing[data])
+      decrease_key(existing, priority) if (priority <=> existing.priority) < 0
+    else
+      @existing[data] = insert(data, priority)
+    end
+    priority
+  end
+
+  def pop(with_priority: false)
+    return nil unless @root
+    @existing.delete(@root.data)
+    removed = @root
+    @root = merge_pairs(@root.left_child)
+    with_priority ? [removed.data, removed.priority] : removed.data
+  end
+
+  def dump
+    @existing.each { |k, v| puts "#{k}: #{v}" }
   end
 
   private
 
-  def down(i, v)
-    while (l_v = @elts[l_i = 2 * i + 1])
-      smallest_i = i
-      smallest_v = v
-      smallest_prio = @prio[smallest_v]
-      if ((l_prio = @prio[l_v]) <=> smallest_prio) < 0
-        smallest_i = l_i
-        smallest_v = l_v
-        smallest_prio = l_prio
-      end
-      if (r_v = @elts[r_i = l_i + 1]) && ((r_prio = @prio[r_v]) <=> smallest_prio) < 0
-        smallest_i = r_i
-        smallest_v = r_v
-      end
-      break if smallest_i == i
-      @elts[i] = smallest_v
-      @idx[smallest_v] = i
-      i = smallest_i
+  # Insert node into this tree
+  def insert(data, priority)
+    PairingTree.new(data, priority).tap { |node| @root = merge(@root, node) }
+  end
+
+  def decrease_key(node, priority)
+    node.priority = priority
+    return if node == @root
+
+    # I don't think we know for sure whether we are violating the heap,
+    # so we'll just do it unconditionally???
+
+    # Remove or detach...?????
+    # Which is correct for efficiency?
+    # Doesn't seem to make a difference here.
+    detach_tree(node)
+    @root = merge(@root, node)
+  end
+
+  # Removes a node from the tree,
+  # reintegrating its children.
+  def remove(node)
+    detach_tree(node)
+    children = merge_pairs(node.left_child)
+    node.left_child = nil
+    @root = merge(@root, children)
+  end
+
+  # Detaches the node from its relatives,
+  # taking its children with it
+  def detach_tree(node)
+    is_left_child = node.prev.left_child == node
+    right_sibling = node.next
+    if is_left_child
+      parent = node.prev
+      parent.left_child = right_sibling
+      right_sibling.prev = parent if right_sibling
+    else
+      left_sibling = node.prev
+      left_sibling.next = right_sibling
+      right_sibling.prev = left_sibling if right_sibling
     end
-    @elts[i] = v
-    @idx[v] = i
+    node.next = nil
+    node.prev = nil
+  end
+
+  # Merge the list of children starting at first_child
+  def merge_pairs(first_child)
+    return nil if first_child.nil?
+    first_child.prev = nil
+    return first_child unless (second_child = first_child.next)
+    third_child = second_child.next
+    first_child.next = nil
+    second_child.prev = nil
+    second_child.next = nil
+    merge(merge(first_child, second_child), merge_pairs(third_child))
+  end
+
+  # Merge two trees
+  def merge(t1, t2)
+    return t2 if t1.nil?
+    return t1 if t2.nil?
+    if (t1.priority <=> t2.priority) < 0
+      t2.next = t1.left_child
+      t2.next.prev = t2 if t2.next
+      t1.left_child = t2
+      t2.prev = t1
+    else
+      t1.next = t2.left_child
+      t1.next.prev = t1 if t1.next
+      t2.left_child = t1
+      t1.prev = t2
+    end
   end
 end
