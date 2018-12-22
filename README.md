@@ -33,6 +33,7 @@ Some may additionally support other ways:
 * Day 9 (Marble Mania): Pass the number of players and the last marble in ARGV
 * Day 11 (Max Square / Chronal Charge): Pass the serial in ARGV
 * Day 14 (Chocolate Charts): Pass the input in ARGV
+* Day 22 (Mode Maze): Pass the depth, target x, and target y in ARGV in that order
 
 # Highlights
 
@@ -70,6 +71,7 @@ Interesting approaches:
 * Day 18 (Tri-State Automata / Settlers of The North Pole):
     Bit-shifting implementation, like http://dotat.at/prog/life/life.html, but with an 18-bit index instead of 9-bit.
     Unfortunately, the "compact representation" did not prove to be faster here.
+* Day 22 (Mode Maze): A\*, of course.
 
 # Takeaways
 
@@ -80,6 +82,7 @@ Interesting approaches:
 * Day 16 (Chronal Classification): A small reading mistake here; I checked for `== 3` instead of `>= 3`.
 * Day 19 (Go With the Flow): This one was interesting since my part 1 input was a prime number, so I assumed it was 1 + that number, which got a wrong answer. Then I decided to dump all registers every time when r3 (my register holding a number that might be added to r0), and noticed that my r0 increased from 1 to 12... then the light bulb turned on, because I saw that my part 2 number was divisible by 11.
 * Day 21 (Chronal Conversion): I can and should have taken the first value that r0 got compared to, but I made a mistake because of bad variable names. My `ipreg` variable was named `ip` at the time, so I was checking `ip == 29` when it needed to be `regs[ip] == 29`. Better variable names will solve this problem. I wonder if statically-checked types would have helped here, but it's hard to imagine that: I would have had to make a register address a different type from a register value, and this would have complicated instruction parsing, I believe.
+* Day 22 (Mode Maze): Finally I have an excuse to use A\*. I did have an implementation lying around, but it was not battle-tested for proper performance, so I missed my leaderboard chance for this. Note that Ruby SortedSet only gets good insert performance if `rbtree` is imported; that's a little too magic for me. Also note that Ruby SortedSet also doesn't have good delete performance in either case, so I ended up having to implement my own priority queue.
 
 # Posting schedule and policy
 
