@@ -1,3 +1,5 @@
+require_relative 'priority_queue'
+
 module Search
   module_function
 
@@ -8,6 +10,35 @@ module Search
       path.unshift(current)
     end
     path.freeze
+  end
+
+  def astar(start, neighbours, heuristic, goal, verbose: false)
+    g_score = Hash.new(1.0 / 0.0)
+    g_score[start] = 0
+
+    closed = {}
+    open = PriorityQueue.new
+    open << [heuristic[start], start]
+    prev = {}
+
+    while (_, current = open.pop)
+      next if closed[current]
+      closed[current] = true
+
+      return [g_score[current], path_of(prev, current)] if current == goal
+
+      neighbours[current].each { |neighbour, cost|
+        next if closed[neighbour]
+        tentative_g_score = g_score[current] + cost
+        next if tentative_g_score >= g_score[neighbour]
+
+        prev[neighbour] = current if verbose
+        g_score[neighbour] = tentative_g_score
+        open << [tentative_g_score + heuristic[neighbour], neighbour]
+      }
+    end
+
+    nil
   end
 
   def bfs(start, neighbours:, goal:)
