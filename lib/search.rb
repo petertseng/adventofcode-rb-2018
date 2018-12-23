@@ -18,11 +18,10 @@ module Search
 
     closed = {}
     open = PriorityQueue.new
-    open << [heuristic[start], start]
+    open[start] = heuristic[start]
     prev = {}
 
-    while (_, current = open.pop)
-      next if closed[current]
+    while (current = open.pop)
       closed[current] = true
 
       return [g_score[current], path_of(prev, current)] if current == goal
@@ -34,7 +33,7 @@ module Search
 
         prev[neighbour] = current if verbose
         g_score[neighbour] = tentative_g_score
-        open << [tentative_g_score + heuristic[neighbour], neighbour]
+        open[neighbour] = tentative_g_score + heuristic[neighbour]
       }
     end
 
