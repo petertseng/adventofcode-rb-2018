@@ -72,6 +72,12 @@ Interesting approaches:
     Bit-shifting implementation, like http://dotat.at/prog/life/life.html, but with an 18-bit index instead of 9-bit.
     Unfortunately, the "compact representation" did not prove to be faster here.
 * Day 22 (Mode Maze): A\*, of course.
+* Day 23 (Emergency Teleportation): 4D coordinates.
+    The bots' ranges can be represented as eight inequalities, one for each element of the product of `[+x, -x], [+y, -y], [+z, -z]`.
+    That can also be represented as four intervals by pairing up opposite coordinates.
+    askalski's idea: https://www.reddit.com/r/adventofcode/comments/a9co1u/day_23_part_2_adversarial_input_for_recursive/ecmpxad
+    By using a 4D coordinate system, we can easily calculate bot intersections and additionally know exactly where the number of intersecting bots can possibly change.
+    Subdivide the space at these interesting points.
 
 # Takeaways
 
