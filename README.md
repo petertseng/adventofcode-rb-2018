@@ -78,6 +78,8 @@ Interesting approaches:
     askalski's idea: https://www.reddit.com/r/adventofcode/comments/a9co1u/day_23_part_2_adversarial_input_for_recursive/ecmpxad
     By using a 4D coordinate system, we can easily calculate bot intersections and additionally know exactly where the number of intersecting bots can possibly change.
     Subdivide the space at these interesting points.
+* Day 25 (Four-Dimensional Adventure):
+    Still an `O(n^2)` affair, but we can make it slightly better by grouping the points by their first coordinate and only comparing the ones that are wihtin 3 on that dimension.
 
 # Takeaways
 
