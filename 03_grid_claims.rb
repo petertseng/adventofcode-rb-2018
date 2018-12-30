@@ -2,24 +2,29 @@ input = ARGF.map { |l|
   l.scan(/-?\d+/).map(&:to_i).freeze
 }.freeze
 
-grid = Array.new(1000) { Array.new(1000) { [] } }
+grid = Array.new(1000) { Array.new(1000, :free) }
+good = input.to_h { |id, _| [id, true] }
+clashes = 0
 
 # The astute reader will note that y/x are swapped.
 # But since h/w are swapped as well, it doesn't matter.
 input.each { |id, y, x, h, w|
   grid[y, h].each { |row|
-    row[x, w].each { |cell|
-      cell << id
+    (x...(x + w)).each { |xx|
+      case (cell = row[xx])
+      when :free
+        row[xx] = id
+      when :clash
+        good.delete(id)
+      else
+        good.delete(id)
+        good.delete(cell)
+        row[xx] = :clash
+        clashes += 1
+      end
     }
   }
 }
 
-puts grid.sum { |row| row.count { |x| x.size > 1 } }
-
-puts input.select { |id, y, x, h, w|
-  grid[y, h].all? { |row|
-    row[x, w].all? { |cell|
-      cell.size == 1
-    }
-  }
-}.map(&:first)
+puts clashes
+puts good.keys
