@@ -70,8 +70,22 @@ def find(digits)
   size = 24
   next_write = 31
 
-  state_table = state_transitions(digits)
-  good_digits = 0
+  # state_transitions: good_digits -> new_digit -> Integer (new_good_digits)
+  # It's expected that we'll then index into state_transitions with new_good_digits.
+  #
+  # Let's skip that extra indexing and precompute it, with:
+  # next_state: good_digits -> new_digit -> Array (new_digit -> Array)
+  #
+  # As can be seen, this will be a self-referential structure.
+  # When the result is nil, we have all the digits.
+  next_state = Array.new(digits.size) { [] }
+  next_state.zip(state_transitions(digits)) { |dst, src|
+    src.each_with_index { |new_good_digits, i|
+      dst[i] = next_state[new_good_digits]
+    }
+  }
+  next_state.each(&:freeze).freeze
+  state = next_state[0]
 
   score1 = first_track[first_pos]
   score2 = second_track[second_pos]
@@ -88,8 +102,7 @@ def find(digits)
 
     if new_score >= 10
       new_score -= 10
-      good_digits = state_table[good_digits][1]
-      return size + 1 - digits.size if good_digits == digits.size
+      return size + 1 - digits.size unless (state = state[1])
       if size == next_write
         suffix << 1
         next_write += 2
@@ -97,8 +110,7 @@ def find(digits)
       size += 1
     end
 
-    good_digits = state_table[good_digits][new_score]
-    return size + 1 - digits.size if good_digits == digits.size
+    return size + 1 - digits.size unless (state = state[new_score])
     if size == next_write
       suffix << new_score
       next_write += 1 + new_score
