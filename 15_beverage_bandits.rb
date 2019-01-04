@@ -121,6 +121,14 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
   end
   uncoord = ->(p) { p.divmod(width) } if DEBUG[:move]
 
+  # Cache open neighbours of each open cell,
+  # which saves a lot of work in BFS.
+  # (4.2 seconds -> 2.6 seconds)
+  open_neighbours = open.map.with_index { |o, i|
+    next unless o
+    next_to(i, width).select { |n| open[n] }.freeze
+  }.freeze
+
   team_of = {
     GOBLIN => goblins,
     ELF => elves,
@@ -160,9 +168,7 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
 
         path = Search.bfs(
           current_unit.pos,
-          neighbours: ->(pos) {
-            next_to(pos, width).select { |n| open[n] && !occupied[n] }
-          },
+          neighbours: ->(pos) { open_neighbours[pos].reject { |n| occupied[n] } },
           goal: _next_to_enemy = enemy_of[current_unit.team].flat_map { |e|
             next_to(e.pos, width)
           }.to_h { |e| [e, true] }
