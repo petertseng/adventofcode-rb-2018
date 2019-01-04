@@ -133,7 +133,6 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
     GOBLIN => goblins,
     ELF => elves,
   }.sort_by(&:first).map(&:last).freeze
-  enemy_of = team_of.reverse.freeze
 
   occupied = (goblins + elves).to_h { |uu| [uu.pos, uu] }
   turn_order = goblins + elves
@@ -143,6 +142,12 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
   # Each unit will store the move_epoch when it finds it cannot move,
   # and use it to determine when it doesn't need to recheck.
   move_epoch = 0
+
+  # Cache the set of squares next to each team.
+  # (2.6 seconds -> 2.3 seconds)
+  next_to = [nil, nil]
+  team_move_epoch = [0, 0]
+  next_to_updated = [-1, -1]
 
   1.step { |round|
     turn_order.select!(&:alive?)
@@ -166,12 +171,19 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
         # Cuts runtime to about 0.9x original.
         next if current_unit.no_move_epoch == move_epoch
 
+        # Do we need to update the set of squares next to the enemy team?
+        enemy_team = 1 - current_unit.team
+        if next_to_updated[enemy_team] < team_move_epoch[enemy_team]
+          next_to[enemy_team] = team_of[enemy_team].flat_map { |u|
+            open_neighbours[u.pos]
+          }.to_h { |e| [e, true] }.freeze
+          next_to_updated[enemy_team] = team_move_epoch[enemy_team]
+        end
+
         path = Search.bfs(
           current_unit.pos,
           neighbours: ->(pos) { open_neighbours[pos].reject { |n| occupied[n] } },
-          goal: _next_to_enemy = enemy_of[current_unit.team].flat_map { |e|
-            next_to(e.pos, width)
-          }.to_h { |e| [e, true] }
+          goal: next_to[enemy_team],
         )
 
         unless path
@@ -183,6 +195,8 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
         end
 
         move_epoch += 1
+        # Moving changes the set of squares next to my own team.
+        team_move_epoch[current_unit.team] = move_epoch
 
         # path[0] == unit's current location.
 
@@ -216,6 +230,8 @@ def battle(goblins, elves, open, width, attack: ([ATTACK] * 2).freeze, cant_die:
         target_team.delete(target)
 
         move_epoch += 1
+        # Dying changes the set of squares next to the dying unit's team.
+        team_move_epoch[target.team] = move_epoch
 
         if target_team.empty?
           winners = team_of[current_unit.team]
