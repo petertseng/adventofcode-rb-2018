@@ -112,7 +112,7 @@ If you like, you may browse my 2015 solutions in:
 * [Ruby](https://github.com/petertseng/adventofcode-rb-2015) (complete)
 * [Haskell](https://github.com/petertseng/adventofcode-hs-2015) (complete)
 * [D](https://github.com/petertseng/adventofcode-d-2015) (complete)
-* [Rust](https://github.com/petertseng/adventofcode-rs-2015) (incomplete, only days 1 and 2)
+* [Rust](https://github.com/petertseng/adventofcode-rs-2015) (complete)
 
 If you like, you may browse my 2016 solutions in:
 * [Ruby](https://github.com/petertseng/adventofcode-rb-2016) (complete)
