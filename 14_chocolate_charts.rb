@@ -25,6 +25,51 @@ def bad_char_table(digits)
   }
 end
 
+# Boyer-Moore
+# http://www-igm.univ-mlv.fr/%7Elecroq/string/node14.html
+def suffixes(digits)
+  m = digits.size
+  suff = Array.new(m, nil)
+  suff[-1] = m
+  g = m - 1
+  f = nil
+
+  (m - 2).downto(0) { |i|
+    if i > g && suff[i + m - 1 - f] < i - g
+      suff[i] = suff[i + m - 1 - f]
+      next
+    end
+
+    g = i if i < g
+    f = i
+    g -= 1 while g >= 0 && digits[g] == digits[g + m - 1 - f]
+    suff[i] = f - g
+  }
+
+  suff
+end
+
+def good_suffix_table(digits)
+  suff = suffixes(digits)
+  m = digits.size
+
+  bmgs = [m] * m
+  j = 0
+  (m - 1).downto(0) { |i|
+    next unless suff[i] == i + 1
+    while j < m - 1 - i
+      bmgs[j] = m - 1 - i if bmgs[j] == m
+      j += 1
+    end
+  }
+
+  (0..(m - 2)).each { |i|
+    bmgs[m - 1 - suff[i]] = m - 1 - i
+  }
+
+  bmgs
+end
+
 # This code does some bad things solely for the purpose of being fast.
 def find(digits)
   first = 0
@@ -34,10 +79,11 @@ def find(digits)
   score1 = scores[first]
   score2 = scores[second]
 
-  last_digit = digits[-1]
   bad_chars = bad_char_table(digits).freeze
-  next_check = digits.size
-  idxs = (2..digits.size).map(&:-@).freeze
+  good_suffixes = good_suffix_table(digits).freeze
+  needle_size = digits.size
+  full_match = -needle_size - 1
+  next_check = needle_size
 
   # while true is faster than loop
   # https://github.com/JuanitoFatas/fast-ruby#loop-vs-while-true-code
@@ -53,15 +99,23 @@ def find(digits)
       new_score -= 10
       scores << 1
       if scores.size == next_check
-        return scores.size - digits.size if last_digit == 1 && idxs.all? { |i| scores[i] == digits[i] }
-        next_check += bad_chars[1]
+        i = -1
+        i -= 1 while digits[i] == scores[i]
+        return scores.size - needle_size if i == full_match
+        gsinc = good_suffixes[i + needle_size]
+        bcinc = bad_chars[scores[i]] + 1 + i
+        next_check += gsinc > bcinc ? gsinc : bcinc
       end
     end
 
     scores << new_score
     if scores.size == next_check
-      return scores.size - digits.size if last_digit == new_score && idxs.all? { |i| scores[i] == digits[i] }
-      next_check += bad_chars[new_score]
+      i = -1
+      i -= 1 while digits[i] == scores[i]
+      return scores.size - needle_size if i == full_match
+      gsinc = good_suffixes[i + needle_size]
+      bcinc = bad_chars[scores[i]] + 1 + i
+      next_check += gsinc > bcinc ? gsinc : bcinc
     end
 
     unless (score1 = scores[first += 1 + score1])
