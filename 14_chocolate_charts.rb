@@ -17,27 +17,12 @@ unless two_only
   puts scores[target, 10].join
 end
 
-# This isn't as formally verified as Knuth-Morris-Pratt,
-# but I think it should be fine.
-# I'm assuming the search pattern is small compared to the digit stream,
-# so it's fine if this is not the most efficient.
-def state_transitions(digits)
-  next_state = Array.new(digits.size) { [0] * 10 }
-  digits.each_with_index { |d, i|
-    next_state[i][d] = i + 1
-    (0..9).each { |wrong_digit|
-      next if wrong_digit == d
-      prefix = digits.first(i) << wrong_digit
-      until prefix.empty?
-        if digits[0, prefix.size] == prefix
-          next_state[i][wrong_digit] = prefix.size
-          break
-        end
-        prefix.shift
-      end
-    }
+# Boyer-Moore-Horspool
+# http://www-igm.univ-mlv.fr/%7Elecroq/string/node18.html
+def bad_char_table(digits)
+  digits[0..-2].each_with_index.with_object([digits.size] * 10) { |(d, i), t|
+    t[d] = digits.size - i - 1
   }
-  next_state.freeze
 end
 
 # This code does some bad things solely for the purpose of being fast.
@@ -46,11 +31,13 @@ def find(digits)
   second = 1
   scores = INITIAL.dup
 
-  state_table = state_transitions(digits)
-  good_digits = 0
-
   score1 = scores[first]
   score2 = scores[second]
+
+  last_digit = digits[-1]
+  bad_chars = bad_char_table(digits).freeze
+  next_check = digits.size
+  idxs = (2..digits.size).map(&:-@).freeze
 
   # while true is faster than loop
   # https://github.com/JuanitoFatas/fast-ruby#loop-vs-while-true-code
@@ -64,14 +51,18 @@ def find(digits)
 
     if new_score >= 10
       new_score -= 10
-      good_digits = state_table[good_digits][1]
-      return scores.size + 1 - digits.size if good_digits == digits.size
       scores << 1
+      if scores.size == next_check
+        return scores.size - digits.size if last_digit == 1 && idxs.all? { |i| scores[i] == digits[i] }
+        next_check += bad_chars[1]
+      end
     end
 
-    good_digits = state_table[good_digits][new_score]
-    return scores.size + 1 - digits.size if good_digits == digits.size
     scores << new_score
+    if scores.size == next_check
+      return scores.size - digits.size if last_digit == new_score && idxs.all? { |i| scores[i] == digits[i] }
+      next_check += bad_chars[new_score]
+    end
 
     unless (score1 = scores[first += 1 + score1])
       first %= scores.size
