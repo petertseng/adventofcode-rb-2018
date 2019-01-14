@@ -94,6 +94,11 @@ teams = ARGF.filter_map { |l|
 
   raise "illegal non-positive number in #{l}" unless nums.all? { |n| n > 0 }
 
+  team_id = {
+    'Immune System' => 0,
+    'Infection' => 1,
+  }.fetch(current_team)
+
   {
     id: id += 1,
     num: nums[0],
@@ -103,6 +108,7 @@ teams = ARGF.filter_map { |l|
     dmg_mod: damage_mod.freeze,
     dmg_type: words[damage_index - 1].to_sym,
     team: current_team.freeze,
+    team_id: team_id,
   }
 }.group_by { |a| a[:team] }.values_at('Immune System', 'Infection')
 
