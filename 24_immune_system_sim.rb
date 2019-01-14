@@ -32,6 +32,32 @@ def attack_phase(turn_order, teams, verbose: nil)
     units_lost = damage_done / defender[:hp]
     any_unit_died ||= units_lost > 0
     group_died = (defender[:num] -= units_lost) <= 0
+    if group_died
+      # Remove defender from by_damage for each type
+      team_by_damage = teams[defender[:team_id]][:by_damage]
+      defender[:weak_index].each { |dmg_type, i|
+        team_by_damage[dmg_type].delete_at(i)
+        team_by_damage[dmg_type].each { |u|
+          j = u[:weak_index][dmg_type]
+          u[:weak_index][dmg_type] -= 1 if j > i
+        }
+      }
+    elsif units_lost > 0
+      # Move defender up in the by_damage for each type
+      defender_score = [nil, effective_power(defender), defender[:initiative]]
+      team_by_damage = teams[defender[:team_id]][:by_damage]
+      defender[:weak_index].each { |dmg_type, i|
+        defender_score[0] = defender[:dmg_mod][dmg_type] || 1
+        team_by_damage_type = team_by_damage[dmg_type]
+        while (u2 = team_by_damage_type[i + 1]) && (defender_score <=> [u2[:dmg_mod][dmg_type] || 1, effective_power(u2), u2[:initiative]]) < 0
+          u2[:weak_index][dmg_type] = i
+          team_by_damage_type[i] = u2
+          i += 1
+        end
+        defender[:weak_index][dmg_type] = i
+        team_by_damage_type[i] = defender
+      }
+    end
     any_group_died ||= group_died
     if verbose&.>=(2)
       dead_comment = group_died ? 'now dead' : "now #{defender[:num]} remaining"
@@ -80,6 +106,7 @@ def battle(teams, boost = 0, verbose: nil)
 
   1.step { |n|
     puts "#{?- * 20} Round #{n} #{?- * 20}" if verbose&.>=(2)
+
     target_selection_phase(teams)
     case attack_phase(turn_order, teams, verbose: verbose)
     when :stalemate; return :stalemate
