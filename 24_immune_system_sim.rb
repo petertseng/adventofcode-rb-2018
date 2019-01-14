@@ -3,8 +3,8 @@ def effective_power(u)
 end
 
 def target_selection(attackers, defenders)
-  defenders = defenders.to_h { |d| [d[:id], d] }
-  attackers.sort_by { |atk| [-effective_power(atk), -atk[:initiative]] }.each { |attacker|
+  defenders = defenders[:units].to_h { |d| [d[:id], d] }
+  attackers[:units].sort_by { |atk| [-effective_power(atk), -atk[:initiative]] }.each { |attacker|
     chosen_target = defenders.values.max_by { |enemy|
       # Since attacker damage remains constant, just use effectiveness.
       [attacker[:effectiveness][enemy[:id]], effective_power(enemy), enemy[:initiative]]
@@ -20,7 +20,7 @@ def target_selection_phase(teams)
   target_selection(*teams.reverse)
 end
 
-def attack_phase(turn_order, verbose: nil)
+def attack_phase(turn_order, teams, verbose: nil)
   any_unit_died = false
   any_group_died = false
 
@@ -42,23 +42,52 @@ def attack_phase(turn_order, verbose: nil)
 end
 
 def battle(teams, boost = 0, verbose: nil)
-  teams = teams.map { |t| t.map(&:dup) }
-  teams[0].each { |u| u[:dmg] += boost }
+  teams = teams.map { |t|
+    us = t[:units].map(&:dup)
+    us.each { |u| u[:weak_index] = u[:weak_index].dup }
+    {
+      units: us,
+      by_damage: t[:by_damage],
+    }
+  }
+  teams[0][:units].each { |u| u[:dmg] += boost }
+  teams[0].tap { |team|
+    us = team[:units]
+    team[:by_damage].each { |dmg_type, idxs|
+      # Need to re-sort because boosting may change effective_power
+      idxs.sort_by! { |idx|
+        u = us[idx]
+        mod = dmg_type ? -u[:dmg_mod][dmg_type] : 1
+        [-mod, -effective_power(u), -u[:initiative]]
+      }
+    }
+    us.each_with_index { |u, i|
+      u[:weak_index] = (u[:weaknesses] + [nil]).map { |k|
+        [k, team[:by_damage][k].index(i)]
+      }.to_h
+    }
+  } if boost > 0
+  teams.each { |team|
+    us = team[:units]
+    team[:by_damage] = team[:by_damage].transform_values { |idxs|
+      idxs.map { |idx| us[idx] }
+    }
+  }
 
   # Turn order never changes, so cache here to avoid sorting so many times.
   # In exchange, we have to delete twice.
-  turn_order = teams.flatten.sort_by { |u| -u[:initiative] }
+  turn_order = teams.flat_map { |t| t[:units] }.sort_by { |u| -u[:initiative] }
 
   1.step { |n|
     puts "#{?- * 20} Round #{n} #{?- * 20}" if verbose&.>=(2)
     target_selection_phase(teams)
-    case attack_phase(turn_order, verbose: verbose)
+    case attack_phase(turn_order, teams, verbose: verbose)
     when :stalemate; return :stalemate
     when :group_died
-      teams.each { |team| team.reject! { |u| u[:num] <= 0 } }
+      teams.each { |team| team[:units].reject! { |u| u[:num] <= 0 } }
       turn_order.reject! { |u| u[:num] <= 0 }
-      return [:immune, teams[0].map { |e| e[:num] }] if teams[1].empty?
-      return [:infect, teams[1].map { |e| e[:num] }] if teams[0].empty?
+      return [:immune, teams[0][:units].map { |e| e[:num] }] if teams[1][:units].empty?
+      return [:infect, teams[1][:units].map { |e| e[:num] }] if teams[0][:units].empty?
     end
   }
 end
@@ -117,6 +146,34 @@ teams = ARGF.filter_map { |l|
   team1.each { |u1|
     # Effectiveness remains the same per enemy; cache it.
     u1[:effectiveness] = ([nil] + team2.map { |u2| u2[:dmg_mod][u1[:dmg_type]] }).freeze
+  }
+}
+
+teams.map! { |team|
+  weak_to = Hash.new { |h, k| h[k] = [] }
+  team.each_with_index { |u, i|
+    u[:weaknesses].each { |k|
+      # Just store IDs here - we make them real refs in `battle`
+      weak_to[k] << i
+    }
+    weak_to[nil] << i
+  }
+  weak_to.each { |dmg_type, idxs|
+    idxs.sort_by! { |idx|
+      u = team[idx]
+      mod = dmg_type ? -u[:dmg_mod][dmg_type] : 1
+      [-mod, -effective_power(u), -u[:initiative]]
+    }
+  }
+  team.each_with_index { |u, i|
+    u[:weak_index] = (u[:weaknesses] + [nil]).map { |k|
+      [k, weak_to[k].index(i)]
+    }.to_h
+  }
+
+  {
+    units: team,
+    by_damage: weak_to,
   }
 }
 
