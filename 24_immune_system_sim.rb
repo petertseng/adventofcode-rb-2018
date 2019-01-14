@@ -3,15 +3,27 @@ def effective_power(u)
 end
 
 def target_selection(attackers, defenders)
-  defenders = defenders[:units].to_h { |d| [d[:id], d] }
+  taken = {}
+  min_by_type = Hash.new(0)
   attackers[:units].sort_by { |atk| [-effective_power(atk), -atk[:initiative]] }.each { |attacker|
-    chosen_target = defenders.values.max_by { |enemy|
-      # Since attacker damage remains constant, just use effectiveness.
-      [attacker[:effectiveness][enemy[:id]], effective_power(enemy), enemy[:initiative]]
-    }
-    chosen_target = nil if chosen_target && attacker[:effectiveness][chosen_target[:id]] == 0
+    dmg_type = attacker[:dmg_type]
+    by_damage = defenders[:by_damage][attacker[:dmg_type]] || []
+
+    i = min_by_type[dmg_type]
+    i += 1 while (chosen_target = by_damage[i]) && taken[chosen_target[:id]]
+    min_by_type[dmg_type] = i + 1
+
+    unless chosen_target
+      # Try the globals?
+      by_damage = defenders[:by_damage][nil]
+      i = min_by_type[nil]
+      i += 1 while (chosen_target = by_damage[i]) && taken[chosen_target[:id]]
+      min_by_type[nil] = i
+      i += 1 while (chosen_target = by_damage[i]) && (taken[chosen_target[:id]] || attacker[:effectiveness][chosen_target[:id]] == 0)
+    end
+
     attacker[:target] = chosen_target
-    defenders.delete(chosen_target[:id]) if chosen_target
+    taken[chosen_target[:id]] = true if chosen_target
   }
 end
 
@@ -197,6 +209,9 @@ teams.map! { |team|
       [k, weak_to[k].index(i)]
     }.to_h
   }
+
+  # tmp: Ruby 2.7.0 sets default to old's default_proc???
+  weak_to.default_proc = nil
 
   {
     units: team,
