@@ -109,22 +109,27 @@ def find(digits)
     # Instead, here we manually unroll that loop.
     # Unfortunately, the fastest way was code duplication.
 
-    return size + 1 - digits.size unless (state = state[new_score])
-
     if new_score >= 10
-      new_score -= 10
-      if size == next_write
+      return size + 1 - digits.size unless state[1]
+      return size + 2 - digits.size unless (state = state[new_score])
+      case next_write - size
+      when 1
+        new_score -= 10
+        suffix << new_score
+        next_write += 1 + new_score
+      when 0
         suffix << 1
         next_write += 2
       end
+      size += 2
+    else
+      return size + 1 - digits.size unless (state = state[new_score])
+      if size == next_write
+        suffix << new_score
+        next_write += 1 + new_score
+      end
       size += 1
     end
-
-    if size == next_write
-      suffix << new_score
-      next_write += 1 + new_score
-    end
-    size += 1
 
     unless (score1 = first_track[first_pos += 1])
       first_pos = 0
@@ -156,7 +161,7 @@ end
   #[5, 1, 5, 8, 9] => 9,
   #[0, 1, 2, 4, 5] => 5,
   #[9, 2, 5, 1, 0] => 18,
-  #[5, 9, 4, 1, 4] => 2018,
+  [5, 9, 4, 1, 4] => 2018,
 }.each { |k, want|
   got = find(k)
   puts "#{k.join}: want #{want}, got #{got}" if want != got
