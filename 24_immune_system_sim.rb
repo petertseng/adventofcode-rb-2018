@@ -106,6 +106,7 @@ teams = ARGF.filter_map { |l|
     dmg: nums[2],
     initiative: nums[3],
     dmg_mod: damage_mod.freeze,
+    weaknesses: damage_mod.select { |_, v| v > 1 }.keys.freeze,
     dmg_type: words[damage_index - 1].to_sym,
     team: current_team.freeze,
     team_id: team_id,
