@@ -43,7 +43,7 @@ Favourite problems:
 
 Interesting approaches:
 
-* Day 01 (Frequency Deltas / Chronal Calibration): See https://www.reddit.com/r/adventofcode/comments/a20646/2018_day_1_solutions/eaukxu5/ . I have decided not to pursue this implementation here, but it boasts better performance for some adversarial inputs.
+* Day 01 (Frequency Deltas / Chronal Calibration): See https://www.reddit.com/r/adventofcode/comments/a20646/2018_day_1_solutions/eaukxu5/ .
 * Day 02 (Inventory Management): Interesting `O(k^2 * n)` solution rather than `O(k * n^2)`, where `k` is length of strings. See some others which may achieve `O(kn)` time:
     * https://www.reddit.com/r/adventofcode/comments/a2damm/2018_day2_part_2_a_linear_time_solution/
     * https://www.reddit.com/r/adventofcode/comments/a2mavh/day_2_part_2_under_n2_time_show_off_your_solution/
