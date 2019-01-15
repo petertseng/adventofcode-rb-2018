@@ -1,7 +1,10 @@
 class UnionFind
+  attr_reader :num_sets
+
   def initialize(things)
     @parent = things.to_h { |x| [x, x] }
     @rank = things.to_h { |x| [x, 0] }
+    @num_sets = things.size
   end
 
   def union(x, y)
@@ -18,14 +21,11 @@ class UnionFind
       @parent[yp] = xp
       @rank[xp] += 1
     end
+    @num_sets -= 1
   end
 
   def find(x)
     @parent[x] = find(@parent[x]) if @parent[x] != x
     @parent[x]
-  end
-
-  def num_sets
-    @parent.each_key.count { |k| find(k) == k }
   end
 end
