@@ -107,22 +107,6 @@ def battle(teams, boost = 0, verbose: nil)
   1.step { |n|
     puts "#{?- * 20} Round #{n} #{?- * 20}" if verbose&.>=(2)
 
-    # Verify by_damage sorting
-    teams.each { |t|
-      t[:by_damage].each { |typ, units|
-        units_resorted = units.sort_by { |u|
-          [-(u[:dmg_mod][typ] || 1), -effective_power(u), -u[:initiative]]
-        }
-        raise "boost #{boost} round #{n} #{typ} is wrong: #{units.map { |u| u[:id] }} but should be #{units_resorted.map { |u| u[:id] }}" if units != units_resorted
-      }
-      t[:units].each { |u|
-        u[:weak_index].each { |dmg_type, i|
-          got = t[:by_damage][dmg_type][i]
-          raise "boost #{boost} round #{n} #{dmg_type} got #{got}, wanted #{u}" if got != u
-        }
-      }
-    }
-
     target_selection_phase(teams)
     case attack_phase(turn_order, teams, verbose: verbose)
     when :stalemate; return :stalemate
