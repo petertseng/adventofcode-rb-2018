@@ -84,24 +84,51 @@ MARGIN = 0
 yrange = (ymin - MARGIN)..(ymax + MARGIN)
 xrange = (xmin - MARGIN)..(xmax + MARGIN)
 
-within = 0
-
 y_dists = yrange.to_h { |y| [y, points.sum { |yy, _| (yy - y).abs }] }.freeze
 x_dists = xrange.to_h { |x| [x, points.sum { |_, xx| (xx - x).abs }] }.freeze
 
-yrange.each { |y|
-  edge_y = y == yrange.begin || y == yrange.end
-  ydist = y_dists[y]
-
-  xrange.each { |x|
-    edge_x = x == xrange.begin || x == xrange.end
-    total_dist = ydist + x_dists[x]
-
-    if total_dist < DIST
-      within += 1
-      puts "DANGER! SAFE ON EDGE #{y}, #{x}" if edge_y || edge_x
-    end
-  }
+# Both distance arrays have a falling half and a rising half.
+# We'll break the X range into these two halves.
+rising_xrange = nil
+falling_xrange = nil
+x_dists.each_cons(2) { |(x1, sum1), (_, sum2)|
+  if falling_xrange
+    break rising_xrange = x1..xrange.end if sum2 > sum1
+  elsif sum2 >= sum1
+    falling_xrange = xrange.begin..x1
+  end
 }
 
-puts within
+# Because of how bsearch works, it's better to search rising in reverse.
+# See below.
+rising_xrange = rising_xrange.to_a.reverse.freeze
+
+puts yrange.sum { |y|
+  ydist = y_dists[y]
+  remaining_dist = DIST - ydist
+
+  # Binary search for the x boundaries at this Y.
+  # Alternative: Binary search the initial bounds,
+  # persist them, and only adjust them as needed on future iterations,
+  # assuming that the needed adjustments will be small.
+  # Required too much work so I'll just search every time.
+
+  # Both bounds:
+  # If all x are small enough, the bound is the first element of the array:
+  #   xrange.begin for left_x/falling_xrange
+  #   xrange.end for right_x/rising_xrange (hence why we reversed it)
+  # If no x are small enough, the bound is nil so we continue.
+  next 0 unless left_x = falling_xrange.bsearch { |x|
+    x_dists[x] < remaining_dist
+  }
+  next 0 unless right_x = rising_xrange.bsearch { |x|
+    x_dists[x] < remaining_dist
+  }
+
+  edge_y = y == yrange.begin || y == yrange.end
+  edge_x = left_x == xrange.begin || right_x == xrange.end
+  puts "DANGER! SAFE ON EDGE #{y} #{left_x}..#{right_x}" if edge_y || edge_x
+
+  # The bounds were inclusive, so we add one more.
+  right_x - left_x + 1
+}
