@@ -1,6 +1,7 @@
 require_relative 'lib/search'
 
 verbose = ARGV.delete('-v')
+show_terrain = ARGV.delete('-t')
 nums = if ARGV.size >= 3 && ARGV.all? { |arg| arg.match?(/^\d+$/) }
   ARGV
 else
@@ -31,6 +32,11 @@ end
 
 def level(x, y)
   LCACHE[x << 20 | y] ||= (index(x, y) + DEPTH) % 20183
+end
+
+if show_terrain
+  t = level(Integer(ARGV[3]), Integer(ARGV[4])) % 3
+  puts "#{t} (#{%w[rocky wet narrow][t]})"
 end
 
 puts (0..TARGX).sum { |x| (0..TARGY).sum { |y| level(x, y) % 3 } }
