@@ -17,11 +17,12 @@ module Search
     g_score[start] = 0
 
     closed = {}
-    open = PriorityQueue.new
+    open = MonotonePriorityQueue.new
     open[start] = heuristic[start]
     prev = {}
 
     while (current = open.pop)
+      next if closed[current]
       closed[current] = true
 
       return [g_score[current], path_of(prev, current)] if current == goal
